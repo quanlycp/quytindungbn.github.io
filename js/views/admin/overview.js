@@ -6,7 +6,7 @@ import { emptyState, statusBadge, installmentHintHtml } from '../../components/u
 import { formatVND, formatDate, formatNumber, formatDateTime, initials, colorFor } from '../../utils.js';
 import { readExcelFirstSheet, rowsToTsv, remapReportTemplateRows } from '../../lib/excelLite.js';
 import { barChartSvg, monthlyComboChartSvg } from '../../components/charts.js';
-import { openContractView } from './customers.js';
+import { openContractView, openCustomerDetail } from './customers.js';
 
 /** "2026-08" -> "Th8/26" — nhãn gọn cho trục ngang biểu đồ theo tháng. */
 function monthLabel(yearMonth) {
@@ -788,11 +788,15 @@ function bindTsbdInputs(sheet) {
 
 /**
  * Danh sách gọn chỉ gồm các hợp đồng thuộc đúng nhóm (quá hạn / gần đến hạn)
- * — bấm vào 1 dòng để mở thẳng chi tiết hợp đồng. Bên phải hiện thẳng số
- * tiền (tô màu theo nhóm) thay vì nhãn trạng thái, kèm tổng cộng cả nhóm ở
- * đầu danh sách để dễ theo dõi. Số tiền = ĐÚNG số tiền của KỲ đến hạn (nếu
- * cảnh báo đến từ 1 kỳ cụ thể trong phân kỳ trả nợ), KHÔNG phải toàn bộ dư
- * nợ hợp đồng — xem S.contractAttentionInfo().dueAmount.
+ * — bấm vào PHẦN THÔNG TIN KHÁCH HÀNG (tên/địa chỉ) của 1 dòng để mở thẳng
+ * chi tiết KHÁCH HÀNG (openCustomerDetail — y hệt màn "Khách hàng & Hợp
+ * đồng", có đủ CCCD/SĐT/mật khẩu/nút thao tác + danh sách MỌI hợp đồng của
+ * khách đó, dễ quản lý hơn thay vì chỉ thấy đúng 1 hợp đồng) — riêng ô SỐ
+ * TIỀN bên phải vẫn bấm riêng được để mở thẳng chi tiết ĐÚNG hợp đồng đang
+ * cảnh báo (openContractView), giống cách tách 2 lớp bấm ở customers.js. Kèm
+ * tổng cộng cả nhóm ở đầu danh sách để dễ theo dõi. Số tiền = ĐÚNG số tiền
+ * của KỲ đến hạn (nếu cảnh báo đến từ 1 kỳ cụ thể trong phân kỳ trả nợ),
+ * KHÔNG phải toàn bộ dư nợ hợp đồng — xem S.contractAttentionInfo().dueAmount.
  *
  * `opts.highlightWithinDays` (tùy chọn, chỉ dùng cho danh sách "Gần đến
  * hạn"): nếu có, CHỈ những hợp đồng còn trong đúng số ngày này mới tô khung
@@ -822,7 +826,7 @@ function openContractListModal(title, contracts, isStaff, colorVar, opts = {}) {
         const highlight = highlightWithinDays == null || info.days <= highlightWithinDays;
         const addressLabel = cust ? ([cust.xom, cust.thon, cust.tinh].filter(Boolean).join(', ') || cust.address || 'Chưa có địa bàn') : '—';
         return `
-        <div class="list-row" data-view-ct="${ct.id}" style="cursor:pointer;flex-direction:column;align-items:stretch;gap:2px">
+        <div class="list-row" data-view-cust="${ct.customerId}" style="cursor:pointer;flex-direction:column;align-items:stretch;gap:2px">
           <div class="flex items-center gap-6" style="flex-wrap:nowrap">
             <span style="font-size:14px;font-weight:700;line-height:1.8;padding-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0">${cust ? cust.name : '—'}</span>
             ${highlight
@@ -831,19 +835,30 @@ function openContractListModal(title, contracts, isStaff, colorVar, opts = {}) {
           </div>
           <div class="flex justify-between items-center gap-6" style="flex-wrap:nowrap">
             <span class="row-sub" style="margin-top:0;flex:1;min-width:0">${addressLabel}</span>
-            <b style="color:${colorVar};font-size:13px;flex-shrink:0">${formatVND(info.dueAmount)}</b>
+            <b data-view-contract="${ct.id}" style="color:${colorVar};font-size:13px;flex-shrink:0">${formatVND(info.dueAmount)}</b>
           </div>
           ${installmentHintHtml(ct)}
         </div>`;
       }).join('') : emptyState({ iconName: 'checkCircle', title: 'Không có hợp đồng nào', message: 'Danh sách hiện đang trống.' })}
     `,
     onMount(sheet) {
-      // Mở chi tiết hợp đồng CHỒNG lên trên (không đóng danh sách này trước)
-      // — đóng chi tiết hợp đồng lại là quay về đúng danh sách đang xem, đỡ
-      // phải mở lại "Xem tất cả" từ đầu mỗi lần muốn xem hợp đồng khác.
-      sheet.querySelectorAll('[data-view-ct]').forEach((row) => {
-        row.addEventListener('click', () => {
-          const ct = S.getContract(row.dataset.viewCt);
+      // Bấm vào PHẦN THÔNG TIN KHÁCH HÀNG (tên/địa chỉ) mở chi tiết KHÁCH
+      // HÀNG (y hệt bấm 1 dòng ở màn "Khách hàng & Hợp đồng") — CHỒNG lên
+      // trên (không đóng danh sách này trước), đóng lại là quay về đúng danh
+      // sách đang xem, đỡ phải mở lại "Xem tất cả" từ đầu mỗi lần muốn xem
+      // khách khác. Bấm riêng vào Ô SỐ TIỀN (data-view-contract, lồng bên
+      // trong) thì mở thẳng chi tiết ĐÚNG hợp đồng đang cảnh báo — chặn nổi
+      // bọt (stopPropagation) để không mở luôn cả khách hàng cùng lúc.
+      sheet.querySelectorAll('[data-view-cust]').forEach((row) => {
+        row.addEventListener('click', (e) => {
+          if (e.target.closest('[data-view-contract]')) return;
+          openCustomerDetail(row.dataset.viewCust, { readOnly: isStaff });
+        });
+      });
+      sheet.querySelectorAll('[data-view-contract]').forEach((el) => {
+        el.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const ct = S.getContract(el.dataset.viewContract);
           openContractView(ct.customerId, ct, { readOnly: isStaff });
         });
       });
