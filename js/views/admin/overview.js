@@ -364,14 +364,17 @@ function openMonthlyDetailModal() {
   const bodyRows = rows.map((m) => {
     const prev = prevMonthOf(m.yearMonth);
     const yearStart = yearStartOf(m.yearMonth);
+    // 4 ô riêng (KHÔNG colspan) — xếp thẳng hàng đúng dưới 4 cột phía trên
+    // (Tháng/Dư nợ/Nợ xấu/Lãi phải thu), thay vì dồn chung 1 dòng chữ như
+    // trước — dễ nhìn hơn, theo đúng yêu cầu. "So với đầu năm:" vẫn nằm ở ô
+    // đầu dòng (cột "Tháng").
+    const yoyTd = 'padding:2px 10px 10px 0;border-bottom:1px solid var(--border);font-size:11px;color:var(--text-muted)';
     const yoyRow = yearStart ? `
       <tr data-yoy-row="${m.yearMonth}" hidden>
-        <td colspan="4" style="padding:2px 10px 10px 0;border-bottom:1px solid var(--border);font-size:11px;color:var(--text-muted)">
-          So với đầu năm:
-          Dư nợ ${deltaChip(pct(m.balance, yearStart.balance), { mode: 'better' })} ·
-          Nợ xấu ${deltaChip(pct(m.badDebt, yearStart.badDebt), { mode: 'worse' })} ·
-          Lãi phải thu ${deltaChip(pct(m.interest, yearStart.interest), { mode: 'better' })}
-        </td>
+        <td style="${yoyTd}">So với đầu năm:</td>
+        <td style="${yoyTd}">${deltaChip(pct(m.balance, yearStart.balance), { mode: 'better' })}</td>
+        <td style="${yoyTd}">${deltaChip(pct(m.badDebt, yearStart.badDebt), { mode: 'worse' })}</td>
+        <td style="${yoyTd}">${deltaChip(pct(m.interest, yearStart.interest), { mode: 'better' })}</td>
       </tr>` : '';
     return `
       <tr data-toggle-yoy="${m.yearMonth}" style="${yearStart ? 'cursor:pointer' : ''}">
