@@ -567,6 +567,15 @@ svg { display: block; }
 @media (min-width: 640px) {
   .modal-sheet { border-radius: 18px; margin: 20px; }
 }
+/* Modal CÓ Ô TÌM KIẾM bên trong danh sách dài/ngắn thất thường (thêm khách
+   vào OA, danh sách/thêm hợp đồng gửi tự động — xem sheetClass: 'sheet-search'
+   ở js/views/admin/zaloOA.js) — CỐ ĐỊNH chiều cao luôn bằng max-height (không
+   co lại theo số kết quả tìm được) để ô tìm kiếm LUÔN đứng yên đúng 1 chỗ ở
+   đầu sheet. Trước đây sheet co theo NỘI DUNG (ít kết quả -> sheet thấp lại)
+   — trên điện thoại modal-overlay canh ĐÁY (align-items: flex-end) nên sheet
+   thấp đi kéo theo cả phần đầu (chứa ô tìm kiếm) tụt xuống gần bàn phím ảo,
+   gây cảm giác "nhảy"/thu gọn khó chịu mỗi lần gõ ra ít kết quả. */
+.modal-sheet.sheet-search { min-height: 88vh; }
 .modal-head {
   display: flex; align-items: center; justify-content: space-between;
   padding: 16px; border-bottom: 1px solid var(--border);

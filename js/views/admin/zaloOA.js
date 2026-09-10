@@ -207,6 +207,7 @@ function openAddCustomerToOAModal(admin, onDone) {
 
   const close = openModal({
     title: 'Thêm khách hàng vào OA',
+    sheetClass: 'sheet-search',
     bodyHtml: `
       ${searchBoxHtml('add-oa-search', 'Tìm theo tên, số CCCD, SĐT...', '')}
       <div class="filter-row mb-8" id="add-oa-pills"></div>
@@ -449,6 +450,7 @@ function openAutoSendListModal(kind, admin, onDone) {
 
   const close = openModal({
     title: section ? section.title : 'Danh sách',
+    sheetClass: 'sheet-search',
     bodyHtml: `
       ${searchBoxHtml('auto-list-search', 'Tìm theo tên khách hoặc mã hợp đồng...', '')}
       <div class="filter-row mb-8" id="auto-list-pills"></div>
@@ -528,6 +530,7 @@ function openAddAutoSendModal(kind, admin, onDone) {
 
   const close = openModal({
     title: isCustomDay ? 'Thêm vào "Gửi theo ngày cụ thể"' : 'Thêm vào "Báo lãi tự động hàng tháng"',
+    sheetClass: 'sheet-search',
     bodyHtml: `
       ${isCustomDay ? `<div class="field"><label>Ngày trong tháng (1-30) — áp dụng cho hợp đồng bạn chọn thêm bên dưới</label><input type="number" id="day-input" min="1" max="30" value="1"/></div>` : ''}
       <div class="field">
