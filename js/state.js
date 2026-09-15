@@ -544,7 +544,7 @@ export function daysOverdue(contract, asOf = new Date()) {
 export function debtGroup(contract, asOf = new Date()) {
   const d = daysOverdue(contract, asOf);
   if (d === null) return null;
-  if (d <= 10) return 1;
+  if (d < 10) return 1;
   if (d <= 90) return 2;
   if (d <= 180) return 3;
   if (d <= 360) return 4;
