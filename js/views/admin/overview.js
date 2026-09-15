@@ -66,7 +66,10 @@ export function render(contentEl) {
   // trang "Khách hàng & Hợp đồng". Tính 1 lần, dùng lại cho cả tile lẫn
   // popup danh sách bên dưới, khỏi tính lại nhiều lần.
   const attention = contracts.map((c) => ({ c, info: S.contractAttentionInfo(c) }));
-  const overdue = attention.filter((x) => x.info.level === 'qua_han').map((x) => x.c);
+  const overdue = attention
+  .filter((x) => x.info.level === 'qua_han')
+  .sort((a, b) => a.info.days - b.info.days)
+  .map((x) => x.c);
   // Ô thống kê + tổng tiền "Gần đến hạn" GIỮ NGUYÊN đúng trong NEAR_DUE_DAYS
   // (15 ngày chính thức) như cũ, không đổi — không phải ngưỡng RỘNG 45 ngày.
   const nearDue = attention.filter((x) => x.info.level === 'gan_den_han' && x.info.days <= S.NEAR_DUE_DAYS).map((x) => x.c);
