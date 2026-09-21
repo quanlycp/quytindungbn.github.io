@@ -109,11 +109,40 @@ function interestDaysAccrued(contract: any, asOf: Date): number {
 }
 
 /** Y HỆT accruedInterest() trong js/state.js. */
+// Tinh lai bang phan so nguyen de khong sai nguong 500 do so thuc.
+// Chi lam tron MOT LAN den nghin dong, khong lam tron truoc den dong.
+function interestRoundedToThousand(balance: number | string, days: number, annualRate: number | string): number {
+  if (![balance, days, annualRate].every(v => Number.isFinite(Number(v)))) {
+    throw new Error('Du lieu tinh lai khong hop le');
+  }
+  if (!Number.isSafeInteger(Number(days)) || Number(days) < 0) {
+    throw new Error('So ngay tinh lai khong hop le');
+  }
+  if (Number(balance) <= 0 || Number(annualRate) <= 0 || Number(days) === 0) return 0;
+  function fraction(value: number | string): [bigint, bigint] {
+    const [mantissa, exponent = '0'] = String(value).trim().toLowerCase().split('e');
+    const [whole, decimal = ''] = mantissa.split('.');
+    const digits = BigInt(whole + decimal);
+    const scale = decimal.length - Number(exponent);
+    return scale >= 0
+      ? [digits, 10n ** BigInt(scale)]
+      : [digits * 10n ** BigInt(-scale), 1n];
+  }
+  const [balanceNum, balanceDen] = fraction(balance);
+  const [rateNum, rateDen] = fraction(annualRate);
+  const numerator = balanceNum * BigInt(days) * rateNum;
+  const denominator = balanceDen * rateDen * 100n * 365n * 1000n;
+  const thousands = numerator / denominator;
+  const remainder = numerator % denominator;
+  const result = Number((thousands + (remainder * 2n >= denominator ? 1n : 0n)) * 1000n);
+  if (!Number.isSafeInteger(result)) throw new Error('So tien vuot gioi han an toan');
+  return result;
+}
+
 function accruedInterest(contract: any, asOf: Date): number {
   if (effectiveStatus(contract, asOf) === 'da_tat_toan') return 0;
   const days = interestDaysAccrued(contract, asOf);
-  const raw = Number(contract.balance) * days * (Number(contract.interest_rate) / 100) / 365;
-  return Math.round(raw / 1000) * 1000;
+  return interestRoundedToThousand(contract.balance, days, contract.interest_rate);
 }
 
 /** Y HỆT withYear() trong js/state.js. */
