@@ -1125,7 +1125,7 @@ Deno.serve(async (req) => {
         GOC_PHAI_TRA: formatVNDZaloTemplate(goc),
         LAI_PHAI_TRA: formatVNDZaloTemplate(interest),
         SO_TIEN_CHUYEN_KHOAN: formatVNDZaloTemplate(total),
-        NOI_DUNG_CHUYEN_KHOAN: stripDiacriticsUpper(`THANH TOAN ${usesDueTemplate ? '' : 'LAI '}HDTD ${contract.code} ${nameNoDiacritics}`),
+        NOI_DUNG_CHUYEN_KHOAN: stripDiacriticsUpper(`TRA ${usesDueTemplate ? '' : 'LAI '}HDTD ${contract.code} ${nameNoDiacritics}`),
         NGAY_DAO_HAN: formatDateVNZalo(dueDateForZalo),
         // Ngày gửi tin (hôm nay) — KHÁC với NGAY_DAO_HAN (ngày đến hạn thật của hợp đồng/kỳ).
         NGAY_KE_HOACH: formatDateVNZalo(now.toISOString()),
