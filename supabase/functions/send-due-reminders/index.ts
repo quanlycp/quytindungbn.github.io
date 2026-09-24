@@ -761,7 +761,7 @@ Deno.serve(async (req) => {
         const picked = pickZaloTemplate(ct, now, orgRow);
         if (picked) {
           const customer = customerMap.get(ct.customer_id);
-          if (customer?.phone && await shouldSend(ct.id, 'zalo_lai_hang_thang')) {
+          if (customer?.phone && await shouldSend(ct.id, 'zalo_lai_hang_thang') && !await hasRecentManualZalo(ct.id, now)) {
             const zaloOk = await sendZaloTemplate({
               accessToken: zaloAccessToken, phone: customer.phone, templateId: picked.templateId,
               templateData: buildZaloTemplateData(ct, customer, now, picked.dueTemplate),
@@ -789,7 +789,7 @@ Deno.serve(async (req) => {
         const picked = pickZaloTemplate(ct, now, orgRow);
         if (picked) {
           const customer = customerMap.get(ct.customer_id);
-          if (customer?.phone && await shouldSend(ct.id, 'zalo_lai_ngay_cu_the')) {
+          if (customer?.phone && await shouldSend(ct.id, 'zalo_lai_ngay_cu_the') && !await hasRecentManualZalo(ct.id, now)) {
             const zaloOk = await sendZaloTemplate({
               accessToken: zaloAccessToken, phone: customer.phone, templateId: picked.templateId,
               templateData: buildZaloTemplateData(ct, customer, now, picked.dueTemplate),
@@ -889,3 +889,20 @@ Deno.serve(async (req) => {
 
   return new Response(JSON.stringify({ ok: true, ...result }), { headers: { 'Content-Type': 'application/json' } });
 });
+
+
+/** OA tự động không gửi lại nếu cùng hợp đồng đã được gửi tay thành công trong 120 giờ qua. */
+async function hasRecentManualZalo(contractId: string, now: Date): Promise<boolean> {
+  const cutoff = new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000).toISOString();
+  const { data, error } = await admin.from('zalo_send_log').select('sent_at')
+    .eq('contract_id', contractId)
+    .eq('triggered_by', 'manual')
+    .eq('status', 'success')
+    .gt('sent_at', cutoff)
+    .limit(1);
+  if (error) {
+    console.error('Không kiểm tra được lịch sử OA gửi tay:', error);
+    return true; // An toàn: không gửi tự động khi không xác định được lần gửi tay.
+  }
+  return !!data?.length;
+}
